@@ -5,6 +5,14 @@ import cloudinary
 import cloudinary.uploader
 from django.conf import settings
 
+#########################   DATABASE OF DJANGO ####################
+
+# also called django models
+# used for structuring the table of data where the data is stored
+# data is stored in form of table 
+
+
+#django user creation
 
 class UserManager(BaseUserManager):
     def create_user(self, email, username=None, password=None, **extra_fields):
@@ -23,6 +31,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, username, password, **extra_fields)
 
 
+# extra fields for user (extension of above user table)
 class User(AbstractUser):
     user_id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=255, blank=True, null=True)
@@ -67,6 +76,8 @@ class User(AbstractUser):
         self.save()
 
 
+# post model where all the articles/blog are saved
+
 class BlogPost(models.Model):
     post_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blog_posts")
@@ -83,6 +94,7 @@ class BlogPost(models.Model):
         db_table = "blog_post"
 
 
+# to save all tags like fantasy tag, science fiction tag, etc
 class Tag(models.Model):
     tag_id = models.AutoField(primary_key=True)  # Added tag_id
     name = models.CharField(max_length=50, unique=True)
@@ -94,6 +106,7 @@ class Tag(models.Model):
         db_table = "blog_tag"
 
 
+# to store all the likes and connect it with the post table
 class Like(models.Model):
     like_id = models.AutoField(primary_key=True)  # Added like_id
     post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name="likes")
@@ -107,6 +120,7 @@ class Like(models.Model):
         unique_together = ("post", "user")  # Ensures a user can like a post only once
 
 
+# to create comment for every user and every post
 class Comment(models.Model):
     comment_id = models.AutoField(primary_key=True)  # Added comment_id
     post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name="comments")

@@ -1,6 +1,11 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+
+# . means call/import all the things inside the views.py
 from . import views
+
+# all the api calls are handled here luike signup then go to views.signup
+# if login then call views.login_api function from views
 
 urlpatterns = [
     path("signup/", views.signup_api, name="signup_api"),

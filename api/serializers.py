@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import User, BlogPost, Tag, Like, Comment
 
+# used so the data is received and can be given in serialized form
+# as all the data is passed in json format
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

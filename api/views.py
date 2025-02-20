@@ -9,8 +9,9 @@ from rest_framework import status
 
 User = get_user_model()
 
+# all the apis and request are handled here after coming from the urls.py
 
-# Password validation
+# Password validation using regular expression
 def validate_password(password):
     if len(password) < 6:
         raise ValueError("Password must be at least 6 characters long.")
@@ -30,6 +31,7 @@ def validate_password(password):
     return True
 
 
+# POST request to create user
 @csrf_exempt
 @api_view(["POST"])
 def signup_api(request):

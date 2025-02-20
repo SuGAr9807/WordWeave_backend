@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import User, BlogPost, Tag, Like, Comment
 
+# all the tables registered here are shown and managed in the admin side of website
+# admin site is built-in in django
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ("user_id", "email", "username", "is_active", "is_staff")
