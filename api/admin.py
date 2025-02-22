@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, BlogPost, Tag, Like, Comment
+from .models import User, BlogPost, Tag, Like, Comment, FailedLoginAttempt
 
 # all the tables registered here are shown and managed in the admin side of website
 # admin site is built-in in django
@@ -33,3 +33,9 @@ class CommentAdmin(admin.ModelAdmin):
     list_display = ("comment_id", "post", "user", "created_at")
     search_fields = ("post__title", "user__email", "text")
     list_filter = ("created_at",)
+
+@admin.register(FailedLoginAttempt)
+class FailedLoginAttemptAdmin(admin.ModelAdmin):
+    list_display = ("user", "timestamp")
+    search_fields = ("user__email", "timestamp")
+    list_filter = ("timestamp",)

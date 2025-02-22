@@ -133,3 +133,12 @@ class Comment(models.Model):
 
     class Meta:
         db_table = "blog_comment"
+
+class FailedLoginAttempt(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    attempt_count = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = "failed_login_attempt"
+        managed = True
