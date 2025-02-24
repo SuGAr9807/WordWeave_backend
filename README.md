@@ -90,3 +90,19 @@ example:
 - }
 
 output: We will get the email on the given email address to change the password
+
+## Logout API
+
+### http://127.0.0.1:8000/logout/
+method: POST
+
+
+Left side:
+Content-TYPE : application/json
+Authorization : Bearer <token>
+
+Right side:
+Nothing needed
+
+
+output: Token is removed and you are logged out from backend
