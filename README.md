@@ -27,6 +27,7 @@ profile_picture: file
 
 ## Login API
 
+### http://127.0.0.1:8000/login/
 method: POST
 
 Left side:
@@ -41,3 +42,51 @@ example:
 - "email":"abc@gmail.com",
 - "password":"password"
 - }
+
+output: 
+token : "token"
+
+- save the token
+
+## Change Password API when logged in
+
+### http://127.0.0.1:8000/change-password/
+method: POST
+note:only do when you are logged in and have token
+
+
+Left side:
+Content-TYPE : application/json
+Authorization : Bearer <token>
+
+Right side:
+
+Type: TEXT
+
+example:
+- {
+- "current_password":"currentpass",
+- "new_password":"newpass"
+- }
+
+
+
+## Forgot Password API
+
+### http://127.0.0.1:8000/password-reset/
+method: POST
+
+
+Left side:
+Content-TYPE : application/json
+
+Right side:
+
+Type: TEXT
+
+example:
+- {
+- "email":"abc@gmail.com"
+- }
+
+output: We will get the email on the given email address to change the password
