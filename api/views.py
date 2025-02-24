@@ -349,23 +349,6 @@ def request_password_reset(request):
     )
 
 
-def send_password_reset_email(request, user):
-    token = default_token_generator.make_token(user)
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    mail_subject = "Password Reset Request"
-    message = render_to_string(
-        "password_reset_email.html",
-        {
-            "user": user,
-            "domain": get_current_site(request).domain,
-            "uid": uid,
-            "token": token,
-        },
-    )
-    to_email = user.email
-    email = EmailMessage(mail_subject, message, to=[to_email])
-    email.send()
-
 
 @api_view(["GET", "POST"])
 def password_reset_confirm(request, uidb64, token):
