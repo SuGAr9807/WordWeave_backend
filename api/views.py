@@ -155,7 +155,6 @@ def login_api(request):
                     {
                         "success": "Login successful.",
                         "access_token": str(access_token),
-                        "user_type": user.user_type,
                     }
                 )
             except Exception as e:

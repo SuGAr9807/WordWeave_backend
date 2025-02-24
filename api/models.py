@@ -52,19 +52,21 @@ class User(AbstractUser):
 
     groups = models.ManyToManyField(
         "auth.Group",
-        related_name="custom_user_groups",  # ✅ Change the related_name to avoid conflict
+        related_name="custom_user_groups",
         blank=True,
     )
 
     user_permissions = models.ManyToManyField(
         "auth.Permission",
-        related_name="custom_user_permissions",  # ✅ Change the related_name to avoid conflict
+        related_name="custom_user_permissions",
         blank=True,
     )
     objects = UserManager()
-    
+
+    # Admin side pe data ka name set karta hai
+        
     def __str__(self):
-        return self.email  # Changed from `self.name` to `self.email`
+        return self.email
 
     class Meta:
         db_table = "user"
@@ -77,7 +79,6 @@ class User(AbstractUser):
 
 
 # post model where all the articles/blog are saved
-
 class BlogPost(models.Model):
     post_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blog_posts")
