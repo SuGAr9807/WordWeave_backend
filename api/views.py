@@ -21,7 +21,14 @@ from django.db.models.query_utils import Q
 from django.shortcuts import render
 from .models import (
     FailedLoginAttempt,
+    Comment,
+    Like,
+    BlogPost,
+    Tag
 )
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -400,3 +407,118 @@ def password_reset_confirm(request, uidb64, token):
                     {"error": "invalid Token"}, status=status.HTTP_400_BAD_REQUEST
                 )
 
+
+# Blog apis
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def add_tag(request):
+    name = request.data.get("name")
+    if not name:
+        return Response({"error": "Tag name is required."}, status=400)
+
+    tag, created = Tag.objects.get_or_create(name=name)
+    return Response({"message": "Tag created!", "tag_id": tag.tag_id}, status=201)
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def blog_list_create(request):
+    if request.method == "GET":
+        blogs = BlogPost.objects.all().order_by("-created_at")
+        data = [
+            {
+                "post_id": blog.post_id,
+                "title": blog.title,
+                "content": blog.content,
+                "user": blog.user.email,
+                "tags": [tag.name for tag in blog.tags.all()],
+                "likes": blog.likes.count(),
+                "comments": blog.comments.count(),
+                "created_at": blog.created_at,
+            }
+            for blog in blogs
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+
+    elif request.method == "POST":
+        data = request.data
+        title = data.get("title")
+        content = data.get("content")
+        tag_ids = data.get("tags", [])  # List of tag IDs
+
+        if not title or not content:
+            return Response({"error": "Title and content are required."}, status=400)
+
+        blog = BlogPost.objects.create(user=request.user, title=title, content=content)
+
+        # Attach selected tags
+        tags = Tag.objects.filter(tag_id__in=tag_ids)
+        blog.tags.set(tags)
+
+        return Response({"message": "Blog created successfully!", "post_id": blog.post_id}, status=201)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def like_post(request, post_id):
+    blog = get_object_or_404(BlogPost, post_id=post_id)
+    like, created = Like.objects.get_or_create(post=blog, user=request.user)
+
+    if not created:
+        like.delete()
+        return Response({"message": "Like removed!"}, status=200)
+
+    return Response({"message": "Post liked!"}, status=200)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def comment_post(request, post_id):
+    blog = get_object_or_404(BlogPost, post_id=post_id)
+    text = request.data.get("text")
+
+    if not text:
+        return Response({"error": "Comment text is required."}, status=400)
+
+    comment = Comment.objects.create(post=blog, user=request.user, text=text)
+    return Response({"message": "Comment added!", "comment_id": comment.comment_id}, status=201)
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_comment(request, comment_id):
+    comment = get_object_or_404(Comment, comment_id=comment_id)
+
+    if request.user != comment.user:
+        return Response({"error": "You can only edit your own comments."}, status=403)
+
+    comment.text = request.data.get("text", comment.text)
+    comment.save()
+    return Response({"message": "Comment updated!"}, status=200)
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(Comment, comment_id=comment_id)
+
+    if request.user != comment.user:
+        return Response({"error": "You can only delete your own comments."}, status=403)
+
+    comment.delete()
+    return Response({"message": "Comment deleted!"}, status=200)
+
+@api_view(["GET"])
+def blog_detail(request, post_id):
+    blog = get_object_or_404(BlogPost, post_id=post_id)
+    data = {
+        "post_id": blog.post_id,
+        "title": blog.title,
+        "content": blog.content,
+        "user": blog.user.email,
+        "tags": [tag.name for tag in blog.tags.all()],
+        "likes": blog.likes.count(),
+        "commentCount": blog.comments.count(),
+        "comments": [
+                    {"user": comment.user.email, "text": comment.text}
+                    for comment in blog.comments.all()
+                ],
+        "created_at": blog.created_at,
+    }
+    return Response(data, status=status.HTTP_200_OK)
