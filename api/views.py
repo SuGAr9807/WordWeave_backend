@@ -199,6 +199,22 @@ def login_api(request):
             {"error": "Method not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def me_api(request):
+    user = request.user
+    user_data = {
+        "id": user.user_id,
+        "username": user.username,
+        "email": user.email,
+        "name": user.name,
+        "profile_picture": user.profile_picture,
+        "is_active": user.is_active,
+        "date_joined": user.date_joined,
+    }
+    return Response(user_data, status=status.HTTP_200_OK)
+
+
 def send_password_reset_email(request, user):
     token = default_token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))

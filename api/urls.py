@@ -10,14 +10,14 @@ from . import views
 urlpatterns = [
     path("signup/", views.signup_api, name="signup_api"),
     path("login/", views.login_api, name="login_api"),
-    path("logout/", views.logout_api, name="logout_api"),
+    path("me/", views.me_api, name="me_api"),
      path("password-reset/", views.request_password_reset, name="password_reset"),
     path(
         "password-reset-confirm/<uidb64>/<token>/",
         views.password_reset_confirm,
         name="password_reset_confirm",
     ),
-    path("change-password/", views.change_pass_api, name="change_password_api"), path("blogs/", views.blog_list_create, name="blog_list_create"),
+    path("change-password/", views.change_pass_api, name="change_password_api"), 
     path("blogs/", views.blog_list_create, name="blog_list_create"),
     path("blogs/<int:post_id>/", views.blog_detail, name="blog_detail"),
     path("blogs/<int:post_id>/like/", views.like_post, name="like_post"),
@@ -25,5 +25,4 @@ urlpatterns = [
     path("comments/<int:comment_id>/update/", views.update_comment, name="update_comment"),
     path("comments/<int:comment_id>/delete/", views.delete_comment, name="delete_comment"),
     path("tags/add/", views.add_tag, name="add_tag"),
-    
 ]
