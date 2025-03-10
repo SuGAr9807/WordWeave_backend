@@ -425,6 +425,17 @@ def password_reset_confirm(request, uidb64, token):
 
 
 # Blog apis
+@api_view(["GET"])
+def list_tags(request):
+    tags = Tag.objects.all().order_by('name')
+    data = [
+        {
+            "tag_id": tag.tag_id,
+            "name": tag.name
+        }
+        for tag in tags
+    ]
+    return Response(data, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
@@ -436,9 +447,76 @@ def add_tag(request):
     tag, created = Tag.objects.get_or_create(name=name)
     return Response({"message": "Tag created!", "tag_id": tag.tag_id}, status=201)
 
-@api_view(["GET", "POST"])
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+import cloudinary.uploader
+from .models import BlogPost, Tag
+
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def blog_list_create(request):
+    if request.method == "POST":
+        try:
+            data = request.data
+            title = data.get("title")
+            content = data.get("content")
+            tag_ids = data.get("tags", [])
+            image = request.FILES.get("image_url")  # Uploaded image file
+
+            if not title or not content:
+                return Response(
+                    {"error": "Title and content are required."}, 
+                    status=400
+                )
+
+            # Upload image to Cloudinary if provided
+            image_url = None
+            if image:
+                try:
+                    upload_result = cloudinary.uploader.upload(image)
+                    image_url = upload_result.get("secure_url")
+                except Exception as e:
+                    return Response(
+                        {"error": f"Image upload failed: {str(e)}"}, 
+                        status=500
+                    )
+
+            # Create BlogPost
+            blog = BlogPost.objects.create(
+                user=request.user,
+                title=title,
+                content=content,
+                image_url=image_url  # Store Cloudinary image URL
+            )
+
+            # Attach selected tags
+            tags = Tag.objects.filter(tag_id__in=tag_ids)
+            blog.tags.set(tags)
+
+            return Response(
+                {
+                    "message": "Blog created successfully!",
+                    "post_id": blog.post_id,
+                    "image_url": image_url,  # Return uploaded image URL
+                },
+                status=201,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": f"Unexpected error: {str(e)}"},
+                status=500
+            )
+
+    return Response(
+        {"error": "Method not allowed."},
+        status=405
+    )
+
+
+@api_view(["GET"])
+def blog_list(request):
     if request.method == "GET":
         blogs = BlogPost.objects.all().order_by("-created_at")
         data = [
@@ -451,27 +529,16 @@ def blog_list_create(request):
                 "likes": blog.likes.count(),
                 "comments": blog.comments.count(),
                 "created_at": blog.created_at,
+                "image_url":blog.image_url
             }
             for blog in blogs
         ]
         return Response(data, status=status.HTTP_200_OK)
-
-    elif request.method == "POST":
-        data = request.data
-        title = data.get("title")
-        content = data.get("content")
-        tag_ids = data.get("tags", [])  # List of tag IDs
-
-        if not title or not content:
-            return Response({"error": "Title and content are required."}, status=400)
-
-        blog = BlogPost.objects.create(user=request.user, title=title, content=content)
-
-        # Attach selected tags
-        tags = Tag.objects.filter(tag_id__in=tag_ids)
-        blog.tags.set(tags)
-
-        return Response({"message": "Blog created successfully!", "post_id": blog.post_id}, status=201)
+    else:
+        return Response(
+            {"error": "Method not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+    
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])

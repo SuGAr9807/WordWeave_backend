@@ -84,12 +84,18 @@ class BlogPost(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blog_posts")
     title = models.CharField(max_length=255)
     content = models.TextField()
+    image_url = models.URLField(null=True, blank=True)
     tags = models.ManyToManyField("Tag", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
+    
+    def upload_profile_picture(self, file):
+        result = cloudinary.uploader.upload(file)
+        self.image_url = result["secure_url"]
+        self.save()
 
     class Meta:
         db_table = "blog_post"
