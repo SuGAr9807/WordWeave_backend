@@ -619,3 +619,62 @@ def blog_detail(request, post_id):
         "created_at": blog.created_at,
     }
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def top_liked_blog_list(request):
+    # Fetch top 10 most liked blogs, optimized with annotation
+    blogs = (
+        BlogPost.objects.annotate(
+            likes_count=Count("likes"),
+            comments_count=Count("comments")
+        )
+        .prefetch_related("tags", "user")
+        .order_by("-likes_count")[:10]  # Sort by most likes and limit to 10
+    )
+
+    data = [
+        {
+            "post_id": blog.post_id,
+            "title": blog.title,
+            "content": blog.content,
+            "user": blog.user.email,
+            "tags": list(blog.tags.values_list("name", flat=True)),
+            "likes": blog.likes_count,
+            "comments": blog.comments_count,
+            "created_at": blog.created_at,
+            "image_url": blog.image_url,
+        }
+        for blog in blogs
+    ]
+
+    return Response(data, status=status.HTTP_200_OK)
+   
+
+@api_view(["GET"])
+def most_commented_blog_list(request):
+    blogs = (
+        BlogPost.objects.annotate(
+            likes_count=Count("likes"),
+            comments_count=Count("comments")
+        )
+        .prefetch_related("tags", "user")
+        .order_by("-comments_count")[:10]  # Sort by most comments and limit to 10
+    )
+
+    data = [
+        {
+            "post_id": blog.post_id,
+            "title": blog.title,
+            "content": blog.content,
+            "user": blog.user.email,
+            "tags": list(blog.tags.values_list("name", flat=True)),
+            "likes": blog.likes_count,
+            "comments": blog.comments_count,
+            "created_at": blog.created_at,
+            "image_url": blog.image_url,
+        }
+        for blog in blogs
+    ]
+
+    return Response(data, status=status.HTTP_200_OK)
