@@ -513,31 +513,40 @@ def blog_list_create(request):
         {"error": "Method not allowed."},
         status=405
     )
-
+    
+from django.db.models import Count
 
 @api_view(["GET"])
 def blog_list(request):
-    if request.method == "GET":
-        blogs = BlogPost.objects.all().order_by("-created_at")
-        data = [
-            {
-                "post_id": blog.post_id,
-                "title": blog.title,
-                "content": blog.content,
-                "user": blog.user.email,
-                "tags": [tag.name for tag in blog.tags.all()],
-                "likes": blog.likes.count(),
-                "comments": blog.comments.count(),
-                "created_at": blog.created_at,
-                "image_url":blog.image_url
-            }
-            for blog in blogs
-        ]
-        return Response(data, status=status.HTTP_200_OK)
-    else:
-        return Response(
-            {"error": "Method not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+    tag_id = request.GET.get("tag_id")
+
+    # Filter by tag if tag_id is provided
+    blogs = BlogPost.objects.all().order_by("-created_at")
+    if tag_id:
+        blogs = blogs.filter(tags__tag_id=tag_id)
+
+    # Optimize data retrieval using `annotate` to avoid extra queries
+    blogs = blogs.annotate(
+        likes_count=Count("likes"),
+        comments_count=Count("comments")
+    ).prefetch_related("tags", "user")
+
+    data = [
+        {
+            "post_id": blog.post_id,
+            "title": blog.title,
+            "content": blog.content,
+            "user": blog.user.email,
+            "tags": list(blog.tags.values_list("name", flat=True)),  # Optimized way to get tag names
+            "likes": blog.likes_count,
+            "comments": blog.comments_count,
+            "created_at": blog.created_at,
+            "image_url": blog.image_url,
+        }
+        for blog in blogs
+    ]
+
+    return Response(data, status=status.HTTP_200_OK)
     
 
 @api_view(["POST"])
@@ -595,11 +604,16 @@ def blog_detail(request, post_id):
         "title": blog.title,
         "content": blog.content,
         "user": blog.user.email,
+        "username": blog.user.username,
         "tags": [tag.name for tag in blog.tags.all()],
         "likes": blog.likes.count(),
+        "likes":[
+                    {"user": like.user.email,"username":like.user.username}
+                    for like in blog.likes.all()
+                ],
         "commentCount": blog.comments.count(),
         "comments": [
-                    {"user": comment.user.email, "text": comment.text}
+                    {"comment_id":comment.comment_id,"user": comment.user.email,"username":comment.user.username, "text": comment.text}
                     for comment in blog.comments.all()
                 ],
         "created_at": blog.created_at,
