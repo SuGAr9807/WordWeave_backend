@@ -678,3 +678,28 @@ def most_commented_blog_list(request):
     ]
 
     return Response(data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def get_all_user(request):
+    # Get all users with annotation for total likes and post count
+    users = User.objects.annotate(
+        total_likes=Count('blog_posts__likes'),
+        posts_count=Count('blog_posts')
+    ).order_by('-total_likes')
+    
+    # Create response data with user information, like count, and post count
+    data = [
+        {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "name": user.name,
+            "profile_picture": user.profile_picture,
+            "total_likes": user.total_likes,
+            "posts_count": user.posts_count,
+            "date_joined": user.date_joined
+        }
+        for user in users
+    ]
+    
+    return Response(data, status=status.HTTP_200_OK)

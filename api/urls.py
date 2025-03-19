@@ -20,6 +20,7 @@ urlpatterns = [
     path("change-password/", views.change_pass_api, name="change_password_api"), 
     path("blogs-create/", views.blog_list_create, name="blog_create"),
     path("blogs-list/", views.blog_list, name="blog_list"),
+    path("blogs-list/get-all-user/", views.get_all_user, name="get_all_user"),
     path("blogs-list/top-liked-posts/", views.top_liked_blog_list, name="top_liked_blog_list"),
     path("blogs-list/most-commented-posts/", views.most_commented_blog_list, name="most_commented_blog_list"),
     path("blogs-list/<int:post_id>/", views.blog_detail, name="blog_detail"),
