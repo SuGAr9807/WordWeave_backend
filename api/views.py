@@ -704,6 +704,39 @@ def get_all_user(request):
     
     return Response(data, status=status.HTTP_200_OK)
 
+
+@api_view(["GET"])
+def get_specific_user(request, user_id):
+    # Filter users based on user_id if provided, else get all users
+    users = User.objects.annotate(
+        total_likes=Count('blog_posts__likes'),
+        posts_count=Count('blog_posts')
+    )
+
+    if user_id:
+        users = users.filter(user_id=user_id)
+
+    if not users.exists():
+        return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    data = [
+        {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "name": user.name,
+            "profile_picture": user.profile_picture,
+            "total_likes": user.total_likes,
+            "posts_count": user.posts_count,
+            "date_joined": user.date_joined,
+            "is_active": user.is_active,
+        }
+        for user in users
+    ]
+
+    return Response(data if user_id is None else data[0], status=status.HTTP_200_OK)
+
+
 @api_view(["GET"])
 def get_all_blogs_by_user(request,user_id):
     if not user_id:
@@ -744,3 +777,64 @@ def get_all_blogs_by_user(request,user_id):
     ]
     
     return Response(data, status=status.HTTP_200_OK)
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_blog(request, blog_id):
+    try:
+        # Get the blog post or return 404 if not found
+        blog = get_object_or_404(BlogPost, post_id=blog_id)
+        
+        # Check if the user is the owner of the blog post
+        if request.user != blog.user:
+            return Response(
+                {"error": "You can only update your own blog posts."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get data from request
+        data = request.data
+        title = data.get("title")
+        content = data.get("content")
+        tag_ids = data.get("tags", [])
+        image = request.FILES.get("image_url")  # New image file, if provided
+        
+        # Update fields if provided
+        if title:
+            blog.title = title
+        if content:
+            blog.content = content
+            
+        # Handle image update if a new image is provided
+        if image:
+            try:
+                upload_result = cloudinary.uploader.upload(image)
+                blog.image_url = upload_result.get("secure_url")
+            except Exception as e:
+                return Response(
+                    {"error": f"Image upload failed: {str(e)}"}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+                
+        # Update tags if provided
+        if tag_ids:
+            tags = Tag.objects.filter(tag_id__in=tag_ids)
+            blog.tags.set(tags)
+            
+        # Save the updated blog post
+        blog.save()
+        
+        return Response({
+            "message": "Blog post updated successfully!",
+            "post_id": blog.post_id,
+            "title": blog.title,
+            "content": blog.content,
+            "image_url": blog.image_url,
+            "tags": list(blog.tags.values_list("name", flat=True))
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {"error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

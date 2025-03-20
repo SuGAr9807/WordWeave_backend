@@ -14,8 +14,8 @@ class TokenMiddleware:
             "/admin",
             "/login/",
             "/signup/",
-            "/blog-list/"
-            "/list-tags/"
+            "/blogs-list",
+            "/list-tags/",
             "/token/",
             "/password-reset/",
             "/password-reset-confirm/",
