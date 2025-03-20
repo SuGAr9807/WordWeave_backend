@@ -703,3 +703,44 @@ def get_all_user(request):
     ]
     
     return Response(data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def get_all_blogs_by_user(request,user_id):
+    if not user_id:
+        return Response(
+            {"error": "User ID is required."}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Get the user or return 404 if not found
+    user = get_object_or_404(User, user_id=user_id)
+    
+    # Fetch all blogs by this user with optimized queries
+    blogs = (
+        BlogPost.objects.filter(user=user)
+        .annotate(
+            likes_count=Count("likes"),
+            comments_count=Count("comments")
+        )
+        .prefetch_related("tags")
+        .order_by("-created_at")
+    )
+    
+    # Format the response data
+    data = [
+        {
+            "post_id": blog.post_id,
+            "title": blog.title,
+            "content": blog.content,
+            "user": user.email,
+            "username": user.username,
+            "tags": list(blog.tags.values_list("name", flat=True)),
+            "likes": blog.likes_count,
+            "comments": blog.comments_count,
+            "created_at": blog.created_at,
+            "image_url": blog.image_url,
+        }
+        for blog in blogs
+    ]
+    
+    return Response(data, status=status.HTTP_200_OK)
