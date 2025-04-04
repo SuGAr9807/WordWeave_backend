@@ -24,6 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+# Check if the key is available
+if not GEMINI_API_KEY:
+    import warnings
+    warnings.warn("GEMINI_API_KEY environment variable is not set! Content moderation will fail.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
